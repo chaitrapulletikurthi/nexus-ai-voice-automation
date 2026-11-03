@@ -1,0 +1,11 @@
+# Never commit local secrets or raw exports
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+raw-exports/
+private/
+credentials/
+__pycache__/
+.DS_Store

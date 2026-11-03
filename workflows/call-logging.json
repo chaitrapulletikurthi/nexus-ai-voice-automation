@@ -1,0 +1,242 @@
+{
+  "name": "Missed Calls → Vapi AI → Airtable Log (portfolio example)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portfolio-call-logging",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "91941f20-1946-5677-bcdc-1d9d977d0daf",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7b53cfb9-6ca0-5743-9472-530e3c2d1be8",
+              "leftValue": "={{ $json.event || ($json.body && $json.body.message && $json.body.message.type) }}",
+              "rightValue": "end-of-call-report",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7b75dccc-c8f0-5a6a-b1b1-200fcf031895",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "CallLogs",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "1b6555c2-d905-5a73-a8ae-36cae881a483",
+      "name": "Create a record"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\": true, \"ignored\": true}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        96
+      ],
+      "id": "c4e3fa71-d928-5e86-99f2-5081175a7544",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\": true, \"logged\": true}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "15ef8d0a-9dbe-5052-a0c4-f6d0dd9a721b",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "10633c6c-3e8c-57d1-aed7-77d6070ac4c0",
+              "name": "call_id",
+              "value": "={{$json.headers?.[\"x-call-id\"] || $json.headers?.cookie?.match(/callId=([^;]+)/)?.[1] || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "91714c14-6847-58ad-ba31-05f3b2551de7",
+              "name": "caller_phone",
+              "value": "=={{\n  (\n    $json.body?.message?.call?.customer?.number\n    || $json.body?.message?.customer?.number\n    || $json.body?.message?.call?.customerNumber\n    || $json.body?.message?.customerNumber\n    || $json.body?.message?.call?.from\n    || $json.body?.message?.from\n    || $json.body?.call?.customer?.number\n    || $json.body?.customer?.number\n    || $json.body?.from\n    || $json.from\n    || \"\"\n  ).toString().replace(/[^\\d+]/g, \"\")\n}}",
+              "type": "string"
+            },
+            {
+              "id": "c795ce4d-8855-556c-bc33-bf4a53fc1baa",
+              "name": "company_number",
+              "value": "=={{\n  (\n    $json.body?.message?.call?.phoneNumber?.number\n    || $json.body?.message?.phoneNumber?.number\n    || $json.body?.message?.call?.to\n    || $json.body?.message?.to\n    || $json.body?.to\n    || $json.to\n    || \"\"\n  ).toString().replace(/[^\\d+]/g, \"\")\n}}",
+              "type": "string"
+            },
+            {
+              "id": "216f4072-8f0c-55c0-8ba7-b6620dbff5d7",
+              "name": "started_at",
+              "value": "={{$json.body?.startedAt || $json.body?.message?.startedAt || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "3e8700c4-5047-5e47-925b-3f725d9ba046",
+              "name": "ended_at",
+              "value": "={{$json.body?.endedAt || $json.body?.message?.endedAt || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "9c7dce2d-c3b0-5761-b268-2d9eb9dcd86b",
+              "name": "summary",
+              "value": "={{Object.values($json.body?.structuredOutputs || $json.body?.message?.structuredOutputs || {})[0]?.result || $json.body?.message?.analysis?.summary || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "1339862f-4e24-5d65-a1d2-3ea6a05b2ab8",
+              "name": "transcript",
+              "value": "={{JSON.stringify($json.body?.transcript || $json.body?.message?.transcript || $json.body?.messages || $json.body?.message?.messages || \"\", null, 2)}}",
+              "type": "string"
+            },
+            {
+              "id": "ecc4da45-0372-5643-9ced-62581b9079bb",
+              "name": "recording_url",
+              "value": "={{$json.body?.recordingUrl || $json.body?.message?.recordingUrl || $json.body?.recording_url || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "a7e409a7-17b8-5f91-854d-4e629806b550",
+              "name": "action_items",
+              "value": "={{$json.body?.actionItems || $json.body?.message?.actionItems || $json.body?.message?.analysis?.actionItems || \"\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "d5617dd4-c9e3-5696-b068-8994b241b159",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

@@ -1,0 +1,222 @@
+{
+  "name": "Portfolio - Buyer Callback Request (sanitized)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portfolio-callback-request",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -816,
+        112
+      ],
+      "id": "portfolio-webhook",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  // Read from body.phone (Webhook structure)\n  const raw = (item.json.body && item.json.body.phone)\n    ? item.json.body.phone\n    : (item.json.phone || \"\");\n\n  const digits = raw.replace(/\\D/g, \"\");\n\n  if (digits.length === 10) {\n    const area = digits.slice(0, 3);\n    const mid = digits.slice(3, 6);\n    const last = digits.slice(6, 10);\n\n    item.json.normalizedPhone = `(${area}) ${mid}-${last}`;\n  } else {\n    item.json.normalizedPhone = raw;\n  }\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -624,
+        96
+      ],
+      "id": "portfolio-normalize-phone",
+      "name": "Normalize Phone"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Buyers",
+          "mode": "name"
+        },
+        "filterByFormula": "={{ '{Phone}=\"' + String($json.normalizedPhone || '').replace(/\"/g, '\\\\\"') + '\"' }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -416,
+        96
+      ],
+      "id": "portfolio-find-buyer-by-phone",
+      "name": "Find Buyer By Phone"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b8a47332-7cf9-4dcf-a5f8-72ffd5564bc9",
+              "leftValue": "={{ $items(\"Find Buyer By Phone\").length > 0 }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        96
+      ],
+      "id": "portfolio-buyer-found",
+      "name": "Buyer Found?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Buyers",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Nexus Callback": "={{ true }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "portfolio-update-record",
+      "name": "Update record"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Buyers",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nexus Callback": true,
+            "Phone": "={{ $json.normalizedPhone }}"
+          },
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        192
+      ],
+      "id": "portfolio-create-a-record",
+      "name": "Create a record"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Phone": {
+      "main": [
+        [
+          {
+            "node": "Find Buyer By Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Buyer By Phone": {
+      "main": [
+        [
+          {
+            "node": "Buyer Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buyer Found?": {
+      "main": [
+        [
+          {
+            "node": "Update record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

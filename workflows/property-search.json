@@ -1,0 +1,139 @@
+{
+  "name": "get-deals-by-city (portfolio example)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portfolio-property-search",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b1931ce6-efa7-53f4-b006-ed9926c2e45f",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Normalize input from Webhook -> body.city\nconst cityRaw = (\n  ($json.body && $json.body.city) ??\n  $json.city ??\n  ''\n).toString().trim();\n\nif (!cityRaw) {\n  return { error: 'Missing required field: city' };\n}\n\nconst city = cityRaw.replace(/\\s+/g, ' ').trim();\nconst limit = 1; // prototype: 1 result\n\nreturn { city, limit };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "271cbe90-e838-5677-82a6-38b2fac339b5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Deals",
+          "mode": "name"
+        },
+        "filterByFormula": "={{ 'LOWER(TRIM({City}))=\\'' + String($json.city || '').trim().toLowerCase().replace(/'/g, '\\\\'') + '\\'' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b2906064-3df0-5c12-8cdd-6387d254e411",
+      "name": "Search records",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "if (items.length === 0) {\n  return {\n    notFound: true,\n    speech: \"I couldn't find any available deals in that city right now. Want me to check a nearby city?\"\n  };\n}\n\nconst rec = items[0].json;\n\nconst city  = rec[\"City\"] || \"that city\";\nconst addr  = rec[\"Full Address\"] || rec[\"Address\"] || \"an unspecified address\";\nconst beds  = rec[\"Bed Count\"] ?? rec[\"Beds\"] ?? \"N/A\";\nconst baths = rec[\"Bath Count\"] ?? rec[\"Baths\"] ?? \"N/A\";\nconst sqft  = rec[\"Square Footage\"] ?? rec[\"Sq Ft\"] ?? \"N/A\";\nconst price = rec[\"Asking Price\"] ?? rec[\"Price\"] ?? rec[\"List Price\"] ?? \"N/A\";\n\nconst speech = `I found one deal in ${city}: ${addr}. It’s ${beds} bed, ${baths} bath, around ${sqft} square feet, asking ${price}. Want me to email you the full details?`;\n\nreturn {\n  success: true,\n  deal_id: rec.id,\n  speech,\n  deal: rec\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "3c5a5f5b-a869-58cc-b6ab-4afd3cc6265b",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "a0f0c052-bb22-5f76-8308-240ebd6abe69",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

@@ -1,0 +1,188 @@
+{
+  "name": "Send Property URL via Email (portfolio example)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portfolio-property-email",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "19d38b6e-8805-5304-801e-45b99edc65e3",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Buyers",
+          "mode": "name"
+        },
+        "filterByFormula": "=FALSE()",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a5c13894-19b8-5672-bc37-23c4b056e933",
+      "name": "Get Buyer"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Deals",
+          "mode": "name"
+        },
+        "filterByFormula": "=FALSE()",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e1ec2715-c12a-5dbd-94b1-c5cca138f342",
+      "name": "Get Deal"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8d363aa6-4377-5e93-a219-345aaef78055",
+              "name": "=phone_e164",
+              "value": "={{\n(() => {\n  const raw = ($node[\"Get Buyer\"].json[\"Phone\"] ?? \"\").toString().trim();\n  if (!raw) return \"\";\n\n  let s = raw.replace(/\\s+/g, \"\");\n  if (s.startsWith(\"00\")) s = \"+\" + s.slice(2);\n  if (s.startsWith(\"+\")) return s;\n\n  const only = s.replace(/\\D/g, \"\");\n  if (only.length === 11 && only.startsWith(\"1\")) return \"+\" + only;\n  if (only.length === 10) return \"+1\" + only;\n  return \"+\" + only;\n})()\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b607f1db-2754-523c-948e-70182973c895",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fromEmail": "portfolio-sender@example.com",
+        "toEmail": "={{$node[\"Get Buyer\"].json[\"Email\"]}}",
+        "subject": "Requested property details",
+        "html": "=<p>Hello {{$node[\"Get Buyer\"].json[\"BuyerName\"]}},</p><p>Here are the requested property details: <a href=\"{{$node[\"Get Deal\"].json[\"Property URL\"]}}\">View Property</a></p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "8af1f34a-c7ce-5bbe-96b5-e6fe2b4d1e57",
+      "name": "Send email"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "b187540d-30a5-556d-97e3-813d1c249ded",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Buyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Buyer": {
+      "main": [
+        [
+          {
+            "node": "Get Deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Deal": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
