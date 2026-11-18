@@ -64,7 +64,7 @@ The assistant's **built-in call-ending action** is distinct from these n8n workf
 - Traced integration issues across voice interactions, n8n executions and Airtable data handoffs.
 - Designed an initial KPI framework for buyer engagement and lead-follow-up visibility; **the analytics proposal is not claimed as a deployed dashboard**.
 
-## Aggregate project outcomes (publish only with approval)
+## Aggregate project outcomes
 
 - **100+ automated customer calls**, reported in internal project summary.
 - **Approximately 80%** ended **without the caller requesting a human representative**; this is **not** a measured issue-resolution or sales-conversion rate.
