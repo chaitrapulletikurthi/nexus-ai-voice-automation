@@ -14,7 +14,20 @@ for p in paths:
             for edge in branch:
                 assert edge['node'] in names,(p,edge)
     s=p.read_text()
-    forbidden=['appz9AMiW3KbFFhRZ','nexkeycollective.com','deals@nexkeycollective.com','917-608-8224','49da069b-cf46-414f-ad7a-f2e782f83e05']
+    # Detect potentially sensitive identifiers
+    sensitive_patterns = [
+        r'app[A-Za-z0-9]{14}',          # Airtable Base IDs
+        r'(?i)api[_-]?key\s*[:=]\s*["\'][^"\']+',
+        r'(?i)Bearer\s+[A-Za-z0-9._-]{16,}',
+        r'(?i)https?://[^\s"\']*webhook[^\s"\']*',
+    ]
+    
+    for pattern in sensitive_patterns:
+        assert not re.search(pattern, s), (
+            f"Potential sensitive information in {p.name}: {pattern}"
+        )
+    
+    assert '"credentials"' not in s, p
     assert not any(v in s for v in forbidden),p
     assert not re.search(r'Bearer\s+[A-Za-z0-9_-]{16,}',s),p
     assert '"credentials"' not in s,p
