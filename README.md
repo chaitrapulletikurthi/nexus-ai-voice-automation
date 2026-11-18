@@ -75,4 +75,4 @@ No individual transcript, recording, call summary, phone number or customer reco
 
 The workflow exports show areas that merit validation in a test environment, including no-match branches, Airtable formula correctness, result ordering, record ID propagation, and confirmation of email delivery. This repository does **not** claim all illustrative examples are production-tested or bug-free.
 
-See [review notes](docs/technical-review.md) and [publishing guidance](PUBLISHING.md).
+See [review notes](docs/technical-review.md).
