@@ -4,7 +4,6 @@
 
 A real-estate buyer-support voice assistant designed to handle common inquiries, capture buyer preferences, retrieve property information, and initiate follow-ups. This repository demonstrates the **automation patterns and engineering decisions**, using **sanitized, importable n8n example workflows**—not the company's deployable production system.
 
-> **Publication review required:** The business, metrics, and original workflow logic are connected to employer work. Confirm permission to publish before setting the repository public. No customer-level call data, raw agent prompt, Vapi tool definitions, access credentials, production account IDs, or active webhook URLs are included.
 
 ## Business challenge
 
